@@ -53,7 +53,7 @@ module.exports = function(grunt) {
           {
             expand: true,
             cwd: '<%=paths.source%>/',
-            src: ['img/*'],
+            src: ['images/*'],
             dest: '<%=paths.build%>/'
           }
         ]
@@ -82,7 +82,7 @@ module.exports = function(grunt) {
           {
             expand: true,
             cwd: '<%=paths.build%>/',
-            src: ['img/*'],
+            src: ['images/*'],
             dest: '<%=paths.dist%>/'
           }
         ]
