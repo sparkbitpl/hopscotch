@@ -830,6 +830,7 @@
         }
         el.innerHTML = winHopscotch.templates[templateToUse](opts);
       }
+      el.addEventListener("mousedown", function(evt) { evt.stopPropagation(); });
 
       // Find arrow among new child elements.
       children = el.children;
@@ -1652,25 +1653,51 @@
         }
       };
 
-      if (!wasMultiPage && getOption('skipIfNoElement')) {
-        goToStepWithTarget(direction, function(stepNum) {
-          changeStepCb.call(self, stepNum);
-        });
-      }
-      else if (currStepNum + direction >= 0 && currStepNum + direction < currTour.steps.length) {
-        // only try incrementing once, and invoke error callback if no target is found
-        currStepNum += direction;
-        step = getCurrStep();
-        if (!utils.getStepTarget(step) && !wasMultiPage) {
-          utils.invokeEventCallbacks('error');
-          return this.endTour(true, false);
+      var changeStepContinuation = function () {
+        if (!wasMultiPage && getOption('skipIfNoElement')) {
+          goToStepWithTarget(direction, function(stepNum) {
+            changeStepCb.call(self, stepNum);
+          });
         }
-        changeStepCb.call(this, currStepNum);
-      } else if (currStepNum + direction === currTour.steps.length) {
-        return this.endTour();
-      }
+        else if (currStepNum + direction >= 0 && currStepNum + direction < currTour.steps.length) {
+          // only try incrementing once, and invoke error callback if no target is found
+          currStepNum += direction;
+          step = getCurrStep();
+          if (!utils.getStepTarget(step) && !wasMultiPage) {
+            utils.invokeEventCallbacks('error');
+            return this.endTour(true, false);
+          }
+          changeStepCb.call(this, currStepNum);
+        } else if (currStepNum + direction === currTour.steps.length) {
+          return this.endTour();
+        }
+      };
+      var nextStep = currTour.steps[currStepNum + direction];
 
-      return this;
+      if (!nextStep) {
+        changeStepContinuation.apply(this);
+      } else {
+        var runBeforeNextStep = nextStep.runBeforeStep || function() {},
+          nextStepWaitCondition = nextStep.waitCondition,
+          waitInterval = nextStep.waitInterval || 50,
+          waitTimeout = nextStep.waitTimeout || 1000;
+
+        runBeforeNextStep();
+
+        if (nextStepWaitCondition) {
+          var elapsedTime = 0;
+
+          var waitingForCondition = setInterval(function() {
+            if (nextStepWaitCondition() || elapsedTime >= waitTimeout) {
+              clearInterval(waitingForCondition);
+              changeStepContinuation.apply(this);
+            }
+            elapsedTime += waitInterval;
+          }, waitInterval);
+        } else {
+          changeStepContinuation.apply(this);
+        }
+      }
     },
 
     /**
@@ -1944,8 +1971,6 @@
      */
     this.showStep = function(stepNum) {
       var step = currTour.steps[stepNum],
-          waitCondition = step.waitCondition,
-          conditionCheckInterval = step.conditionCheckInterval || 50,
           prevStepNum = currStepNum;
       if(!utils.getStepTarget(step)) {
         currStepNum = stepNum;
@@ -1954,28 +1979,15 @@
         return;
       }
 
-      function showStepContinuation() {
-        if (step.delay) {
-          setTimeout(function() {
-            showStepHelper(stepNum);
-          }, step.delay);
-        }
-        else {
+      if (step.delay) {
+        setTimeout(function() {
           showStepHelper(stepNum);
-        }
-        return this;
+        }, step.delay);
       }
-
-      if (waitCondition) {
-        var waitingForCondition = setInterval(function() {
-          if (waitCondition()) {
-            clearInterval(waitingForCondition);
-            showStepContinuation();
-          }
-        }, conditionCheckInterval);
-      } else {
-        showStepContinuation();
+      else {
+        showStepHelper(stepNum);
       }
+      return this;
     };
 
     /**
@@ -2048,7 +2060,6 @@
       destroyBubble();
 
       currTour = null;
-
       return this;
     };
 
@@ -2445,7 +2456,12 @@
   };
 
   winHopscotch = new Hopscotch();
-
+  document.addEventListener("mousedown", function () {
+    var currentTour = winHopscotch.getCurrTour();
+    if (currentTour && currentTour.closeOnClickOutsideBubble) {
+      winHopscotch.endTour(true);
+    }
+  });
 // Template includes, placed inside a closure to ensure we don't
 // end up declaring our shim globally.
 (function(){
