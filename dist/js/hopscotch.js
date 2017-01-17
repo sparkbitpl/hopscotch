@@ -1872,7 +1872,7 @@
       // loadTour if we are calling startTour directly. (When we call startTour
       // from window onLoad handler, we'll use currTour)
       if (!currTour) {
-        
+
         // Sanity check! Is there a tour?
         if(!tour){
           throw new Error('Tour data is required for startTour.');
@@ -1960,6 +1960,8 @@
      */
     this.showStep = function(stepNum) {
       var step = currTour.steps[stepNum],
+          waitCondition = step.waitCondition,
+          conditionCheckInterval = step.conditionCheckInterval || 50,
           prevStepNum = currStepNum;
       if(!utils.getStepTarget(step)) {
         currStepNum = stepNum;
@@ -1968,15 +1970,28 @@
         return;
       }
 
-      if (step.delay) {
-        setTimeout(function() {
+      function showStepContinuation() {
+        if (step.delay) {
+          setTimeout(function() {
+            showStepHelper(stepNum);
+          }, step.delay);
+        }
+        else {
           showStepHelper(stepNum);
-        }, step.delay);
+        }
+        return this;
       }
-      else {
-        showStepHelper(stepNum);
+
+      if (waitCondition) {
+        var waitingForCondition = setInterval(function() {
+          if (waitCondition()) {
+            clearInterval(waitingForCondition);
+            showStepContinuation();
+          }
+        }, conditionCheckInterval);
+      } else {
+        showStepContinuation();
       }
-      return this;
     };
 
     /**

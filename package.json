@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "grunt": "~0.4.1",
+    "grunt-cli": "1.2.0",
     "grunt-bump": "~0.0.13",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-compress": "~0.6.0",
