@@ -417,6 +417,10 @@
     getStepTarget: function(step) {
       var queriedTarget;
 
+      if (step && step.global) {
+        return document.body;
+      }
+
       if (!step || !step.target) {
         return null;
       }
@@ -635,96 +639,107 @@
           arrowEl      = this.arrowEl,
           arrowPos     = step.isRtl ? 'right' : 'left';
 
-      utils.flipPlacement(step);
-      utils.normalizePlacement(step);
+      if (step.global) {
+        var bubbleWidth = el.clientWidth,
+          bubbleHeight = el.clientHeight,
+          docWidth = window.innerWidth,
+          docHeight = window.innerHeight;
 
-      bubbleBoundingWidth = el.offsetWidth;
-      bubbleBoundingHeight = el.offsetHeight;
-      utils.removeClass(el, 'fade-in-down fade-in-up fade-in-left fade-in-right');
+        el.style.position = "fixed";
+        el.style.top = (docHeight - bubbleHeight) / 2 + "px";
+        el.style.left = (docWidth - bubbleWidth) / 2 + "px";
+      } else {
+        utils.flipPlacement(step);
+        utils.normalizePlacement(step);
 
-      // SET POSITION
-      boundingRect = targetEl.getBoundingClientRect();
+        bubbleBoundingWidth = el.offsetWidth;
+        bubbleBoundingHeight = el.offsetHeight;
+        utils.removeClass(el, 'fade-in-down fade-in-up fade-in-left fade-in-right');
 
-      verticalLeftPosition = step.isRtl ? boundingRect.right - bubbleBoundingWidth : boundingRect.left;
+        // SET POSITION
+        boundingRect = targetEl.getBoundingClientRect();
 
-      if (step.placement === 'top') {
-        top = (boundingRect.top - bubbleBoundingHeight) - this.opt.arrowWidth;
-        left = verticalLeftPosition;
-      }
-      else if (step.placement === 'bottom') {
-        top = boundingRect.bottom + this.opt.arrowWidth;
-        left = verticalLeftPosition;
-      }
-      else if (step.placement === 'left') {
-        top = boundingRect.top;
-        left = boundingRect.left - bubbleBoundingWidth - this.opt.arrowWidth;
-      }
-      else if (step.placement === 'right') {
-        top = boundingRect.top;
-        left = boundingRect.right + this.opt.arrowWidth;
-      }
-      else {
-        throw new Error('Bubble placement failed because step.placement is invalid or undefined!');
-      }
+        verticalLeftPosition = step.isRtl ? boundingRect.right - bubbleBoundingWidth : boundingRect.left;
 
-      // SET (OR RESET) ARROW OFFSETS
-      if (step.arrowOffset !== 'center') {
-        arrowOffset = utils.getPixelValue(step.arrowOffset);
-      }
-      else {
-        arrowOffset = step.arrowOffset;
-      }
-      if (!arrowOffset) {
-        arrowEl.style.top = '';
-        arrowEl.style[arrowPos] = '';
-      }
-      else if (step.placement === 'top' || step.placement === 'bottom') {
-        arrowEl.style.top = '';
-        if (arrowOffset === 'center') {
-          arrowEl.style[arrowPos] = Math.floor((bubbleBoundingWidth / 2) - arrowEl.offsetWidth/2) + 'px';
+        if (step.placement === 'top') {
+          top = (boundingRect.top - bubbleBoundingHeight) - this.opt.arrowWidth;
+          left = verticalLeftPosition;
+        }
+        else if (step.placement === 'bottom') {
+          top = boundingRect.bottom + this.opt.arrowWidth;
+          left = verticalLeftPosition;
+        }
+        else if (step.placement === 'left') {
+          top = boundingRect.top;
+          left = boundingRect.left - bubbleBoundingWidth - this.opt.arrowWidth;
+        }
+        else if (step.placement === 'right') {
+          top = boundingRect.top;
+          left = boundingRect.right + this.opt.arrowWidth;
         }
         else {
-          // Numeric pixel value
-          arrowEl.style[arrowPos] = arrowOffset + 'px';
+          throw new Error('Bubble placement failed because step.placement is invalid or undefined!');
         }
-      }
-      else if (step.placement === 'left' || step.placement === 'right') {
-        arrowEl.style[arrowPos] = '';
-        if (arrowOffset === 'center') {
-          arrowEl.style.top = Math.floor((bubbleBoundingHeight / 2) - arrowEl.offsetHeight/2) + 'px';
+
+        // SET (OR RESET) ARROW OFFSETS
+        if (step.arrowOffset !== 'center') {
+          arrowOffset = utils.getPixelValue(step.arrowOffset);
         }
         else {
-          // Numeric pixel value
-          arrowEl.style.top = arrowOffset + 'px';
+          arrowOffset = step.arrowOffset;
         }
-      }
+        if (!arrowOffset) {
+          arrowEl.style.top = '';
+          arrowEl.style[arrowPos] = '';
+        }
+        else if (step.placement === 'top' || step.placement === 'bottom') {
+          arrowEl.style.top = '';
+          if (arrowOffset === 'center') {
+            arrowEl.style[arrowPos] = Math.floor((bubbleBoundingWidth / 2) - arrowEl.offsetWidth/2) + 'px';
+          }
+          else {
+            // Numeric pixel value
+            arrowEl.style[arrowPos] = arrowOffset + 'px';
+          }
+        }
+        else if (step.placement === 'left' || step.placement === 'right') {
+          arrowEl.style[arrowPos] = '';
+          if (arrowOffset === 'center') {
+            arrowEl.style.top = Math.floor((bubbleBoundingHeight / 2) - arrowEl.offsetHeight/2) + 'px';
+          }
+          else {
+            // Numeric pixel value
+            arrowEl.style.top = arrowOffset + 'px';
+          }
+        }
 
-      // HORIZONTAL OFFSET
-      if (step.xOffset === 'center') {
-        left = (boundingRect.left + targetEl.offsetWidth/2) - (bubbleBoundingWidth / 2);
-      }
-      else {
-        left += utils.getPixelValue(step.xOffset);
-      }
-      // VERTICAL OFFSET
-      if (step.yOffset === 'center') {
-        top = (boundingRect.top + targetEl.offsetHeight/2) - (bubbleBoundingHeight / 2);
-      }
-      else {
-        top += utils.getPixelValue(step.yOffset);
-      }
+        // HORIZONTAL OFFSET
+        if (step.xOffset === 'center') {
+          left = (boundingRect.left + targetEl.offsetWidth/2) - (bubbleBoundingWidth / 2);
+        }
+        else {
+          left += utils.getPixelValue(step.xOffset);
+        }
+        // VERTICAL OFFSET
+        if (step.yOffset === 'center') {
+          top = (boundingRect.top + targetEl.offsetHeight/2) - (bubbleBoundingHeight / 2);
+        }
+        else {
+          top += utils.getPixelValue(step.yOffset);
+        }
 
-      // ADJUST TOP FOR SCROLL POSITION
-      if (!step.fixedElement) {
-        top += utils.getScrollTop();
-        left += utils.getScrollLeft();
+        // ADJUST TOP FOR SCROLL POSITION
+        if (!step.fixedElement) {
+          top += utils.getScrollTop();
+          left += utils.getScrollLeft();
+        }
+
+        // ACCOUNT FOR FIXED POSITION ELEMENTS
+        el.style.position = (step.fixedElement ? 'fixed' : 'absolute');
+
+        el.style.top = top + 'px';
+        el.style.left = left + 'px';
       }
-
-      // ACCOUNT FOR FIXED POSITION ELEMENTS
-      el.style.position = (step.fixedElement ? 'fixed' : 'absolute');
-
-      el.style.top = top + 'px';
-      el.style.left = left + 'px';
     },
 
     /**
@@ -786,10 +801,12 @@
         nextBtnText = utils.getI18NString('nextBtn');
       }
 
-      utils.flipPlacement(step);
-      utils.normalizePlacement(step);
+      if (!step.global) {
+        utils.flipPlacement(step);
+        utils.normalizePlacement(step);
 
-      this.placement = step.placement;
+        this.placement = step.placement;
+      }
 
       // Setup the configuration options we want to pass along to the template
       opts = {
@@ -861,7 +878,10 @@
 
       // Set z-index and arrow placement
       el.style.zIndex = (typeof step.zindex === 'number') ? step.zindex : '';
-      this._setArrow(step.placement);
+
+      if (!step.global) {
+        this._setArrow(step.placement);
+      }
 
       // Set bubble positioning
       // Make sure we're using visibility:hidden instead of display:none for height/width calculations.
@@ -1214,7 +1234,7 @@
         if (callouts[opt.id]) {
           throw new Error('Callout by that id already exists. Please choose a unique id.');
         }
-        if (!utils.getStepTarget(opt)) {
+        if (!opt.global && !utils.getStepTarget(opt)) {
           throw new Error('Must specify existing target element via \'target\' option.');
         }
         opt.showNextButton = opt.showPrevButton = false;
