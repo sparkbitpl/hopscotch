@@ -1073,11 +1073,16 @@
         if (this.opt.isTourBubble){
           var currStepNum   = winHopscotch.getCurrStepNum(),
               currTour      = winHopscotch.getCurrTour(),
+              lastStepNum   = currTour.steps.length - 1,
               doEndCallback = (currStepNum === currTour.steps.length-1);
 
           utils.invokeEventCallbacks('close');
 
-          winHopscotch.endTour(true, doEndCallback);
+          if (currTour.jumpToLastStepBeforeClose && currStepNum < lastStepNum) {
+            winHopscotch.showStep(lastStepNum);
+          } else {
+            winHopscotch.endTour(true, doEndCallback);
+          }
         } else {
           if (this.opt.onClose) {
             utils.invokeCallback(this.opt.onClose);
